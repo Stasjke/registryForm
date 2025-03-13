@@ -239,7 +239,6 @@ function App() {
 				<button type="submit" disabled={!isValid} className={styles.button}>
 					Зарегистрироваться
 				</button>
-				{submitError && <p className={styles.submitError}>{submitError}</p>}
 			</form>
 		</div>
 	);
