@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import styles from './App.module.css';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm } from 'react-hook-form';
 
-const initialState = {
+/*const initialState = {
 	email: '',
 	password: '',
 	copyPassword: '',
 };
-
 function App() {
 	const [state, setState] = useState(initialState);
 	const [emailError, setEmailError] = useState('');
@@ -66,7 +68,6 @@ function App() {
 
 		setIsFormValid(valid);
 		return valid;
-	};
 
 	const handleSubmit = (event) => {
 		event.preventDefault();
@@ -87,53 +88,158 @@ function App() {
 
 	return (
 		<div className={styles.app}>
-			<form onSubmit={handleSubmit} className={styles.form}>
+				<form onSubmit={handleSubmit} className={styles.form}>
+					<div className={styles.formGroup}>
+						<label htmlFor="email">Email:</label>
+						<input
+							type="email"
+							id="email"
+							name="email"
+							value={email}
+							onChange={handleChange}
+						/>
+						{emailError && <p className={styles.error}>{emailError}</p>}
+					</div>
+					<div className={styles.formGroup}>
+						<label htmlFor="password">Пароль:</label>
+						<input
+							type={showPass ? 'text' : 'password'}
+							id="password"
+							name="password"
+							value={password}
+							onChange={handleChange}
+						/>
+						<button
+							type="button"
+							onClick={passVisibility}
+							className={styles.passButtonOn}
+						>
+							{showPass ? 'Скрыть пароль' : 'Показать пароль'}
+						</button>
+						{passwordError && <p className={styles.error}>{passwordError}</p>}
+					</div>
+					<div className={styles.formGroup}>
+						<label htmlFor="copyPassword">Повторите пароль:</label>
+						<input
+							type="password"
+							id="copyPassword"
+							name="copyPassword"
+							value={copyPassword}
+							onChange={handleChange}
+						/>
+						{copyPasswordError && (
+							<p className={styles.error}>{copyPasswordError}</p>
+						)}
+					</div>
+					<button type="submit" disabled={!isFormValid} className={styles.button}>
+						Зарегистрироваться
+					</button>
+					{submitError && <p className={styles.submitError}>{submitError}</p>}{' '}
+				</form>
+			</div>
+		)
+} */
+
+//  React Hook Form и Yup.
+
+const fieldsScheme = yup.object().shape({
+	email: yup
+		.string()
+		.matches(
+			/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/,
+			'Некорректный адрес электронной почты. Проверьте формат (пример: user@mail.ru).',
+		),
+	password: yup
+		.string()
+		.matches(
+			/^(?=.*[A-Z]).{6,}$/,
+			'Пароль должен содержать минимум 6 символов и хотя бы одну заглавную букву.',
+		),
+	copyPassword: yup.string().oneOf([yup.ref('password')], 'Пароли не совпадают'),
+});
+
+function App() {
+	const [showPass, setShowPass] = useState(false);
+	const [submitError, setSubmitError] = useState('');
+	const {
+		register,
+		handleSubmit,
+		formState: { errors, isValid },
+		reset,
+	} = useForm({
+		defaultValues: {
+			email: '',
+			password: '',
+			copyPassword: '',
+		},
+		resolver: yupResolver(fieldsScheme),
+		mode: 'onChange',
+	});
+
+	const onSubmit = (data) => {
+		console.log('Данные регистрации:', data);
+		setSubmitError('');
+		reset();
+	};
+
+	const passVisibility = () => {
+		setShowPass(!showPass);
+	};
+
+	return (
+		<div className={styles.app}>
+			<form onSubmit={handleSubmit(onSubmit)} className={styles.form} noValidate>
 				<div className={styles.formGroup}>
 					<label htmlFor="email">Email:</label>
 					<input
 						type="email"
 						id="email"
-						name="email"
-						value={email}
-						onChange={handleChange}
+						{...register('email')}
+						className={styles.input}
 					/>
-					{emailError && <p className={styles.error}>{emailError}</p>}
+					{errors.email && (
+						<p className={styles.error}>{errors.email.message}</p>
+					)}
 				</div>
 				<div className={styles.formGroup}>
 					<label htmlFor="password">Пароль:</label>
-					<input
-						type={showPass ? 'text' : 'password'}
-						id="password"
-						name="password"
-						value={password}
-						onChange={handleChange}
-					/>
-					<button
-						type="button"
-						onClick={passVisibility}
-						className={styles.passButonOn}
-					>
-						{showPass ? 'Скрыть пароль' : 'Показать пароль'}
-					</button>
-					{passwordError && <p className={styles.error}>{passwordError}</p>}
-				</div>
-				<div className={styles.formGroup}>
-					<label htmlFor="copyPassword">Повторите пароль:</label>
-					<input
-						type="password"
-						id="copyPassword"
-						name="copyPassword"
-						value={copyPassword}
-						onChange={handleChange}
-					/>
-					{copyPasswordError && (
-						<p className={styles.error}>{copyPasswordError}</p>
+					<div className={styles.passwordInput}>
+						<input
+							type={showPass ? 'text' : 'password'}
+							id="password"
+							{...register('password')}
+							className={styles.input}
+						/>
+						<button
+							type="button"
+							onClick={passVisibility}
+							className={styles.passButtonOn}
+						>
+							{showPass ? 'Скрыть пароль' : 'Показать пароль'}
+						</button>
+					</div>
+					{errors.password && (
+						<p className={styles.error}>{errors.password.message}</p>
 					)}
 				</div>
-				<button type="submit" disabled={!isFormValid} className={styles.button}>
+				<div className={styles.formGroup}>
+					<label htmlFor="copyPassword">Подтвердите пароль:</label>
+					<div className={styles.passwordInput}>
+						<input
+							type={showPass ? 'text' : 'password'}
+							id="copyPassword"
+							{...register('copyPassword')}
+							className={styles.input}
+						/>
+					</div>
+					{errors.copyPassword && (
+						<p className={styles.error}>{errors.copyPassword.message}</p>
+					)}
+				</div>
+				<button type="submit" disabled={!isValid} className={styles.button}>
 					Зарегистрироваться
 				</button>
-				{submitError && <p className={styles.submitError}>{submitError}</p>}{' '}
+				{submitError && <p className={styles.submitError}>{submitError}</p>}
 			</form>
 		</div>
 	);
